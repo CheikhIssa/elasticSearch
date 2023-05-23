@@ -1,0 +1,510 @@
+EXERCICE 1
+
+1) Que faut-il écrire dans le fichier elasticsearch.yml pour configurer une 
+instance Elasticsearch avec les paramètres suivants :
+	- Nom du noeud : `es-01`
+	- Nom du cluster : `magic-system`
+
+node.name: es-01
+cluster.name: magic-system
+
+2) Quel est le nom du fichier à modifier pour paramétrer les options de la JVM ?
+	jvm.options 
+
+3) Quelles est la valeur à écrire pour limiter la heap size à 8GB maximum ?
+
+-Xmx8g
+
+
+EXERCICE 2 
+
+POST /recettes-test/_bulk
+{"index": {}}
+{"title": "Tarte aux pommes", "author": "Alice", "description": "Une tarte aux pommes croustillante et délicieuse", "publication_date": "2022-05-01", "pages": 20}
+{"index": {}}
+{"title": "Gaufres au caramel", "author": "Bob", "description": "Des gaufres moelleuses avec une sauce caramel maison", "publication_date": "2021-12-15", "pages": 15}
+{"index": {}}
+{"title": "Muffins au citron", "author": "Dimitri", "description": "Des muffins frais et acidulés", "publication_date": "2023-01-03", "pages": 18}
+{"index": {}}
+{"title": "Crêpes à la framboise", "author": "Zoé", "description": "Des crêpes légères et fruitées", "publication_date": "2022-07-23", "pages": 22}
+{"index": {}}
+{"title": "Tiramisu aux pommes caramélisées", "author": "Camille", "description": "Un tiramisu revisité avec des pommes caramélisées", "publication_date": "2021-11-11", "pages": 25}
+{"index": {}}
+{"title": "Gâteau au citron", "author": "Alex", "description": "Un gâteau moelleux et parfumé au citron", "publication_date": "2023-02-14", "pages": 30}
+{"index": {}}
+{"title": "Tarte aux framboises et citron vert", "author": "Alice", "description": "Une tarte légère et acidulée", "publication_date": "2022-08-09", "pages": 21}
+{"index": {}}
+{"title": "Gaufres à la pomme", "author": "Bob", "description": "Des gaufres aux pommes cuites à la cannelle", "publication_date": "2021-09-30", "pages": 16}
+{"index": {}}
+{"title": "Muffins au caramel", "author": "Dimitri", "description": "Des muffins gourmands au caramel fondant", "publication_date": "2022-04-19", "pages": 19}
+{"index": {}}
+{"title": "Crêpes au citron et sucre", "author": "Zoé", "description": "Des crêpes classiques au citron et sucre", "publication_date": "2023-03-27", "pages": 23}
+{"index": {}}
+{"title": "Gâteau aux framboises", "author": "Camille", "description": "Un gâteau aux framboises légèrement acidulé", "publication_date": "2021-10-10", "pages": 28}
+{"
+
+
+- La méthode utilisée et l’endpoint associé : méthode bulk, elle permet d'envoyer 
+plusieurs actions d'indexation en une seule requête pour améliorer les performances.
+
+EXERCICE 3
+1. Rechercher toutes le recettes qui contiennent “pomme” 
+(au singulier) dans leur description
+
+GET /recettes-test/_search
+{
+  "query": {
+    "match": {
+      "description": "pomme"
+    }
+  }
+}
+
+a) 1. Avez-vous des résultats ? Si oui lesquels, sinon que faudrait-il 
+faire pour en avoir ?
+	Pas de résultats, il faut d'abord faire un mapping pour mieux analyser
+	"description". 
+
+2.Rechercher les recettes de “Zoé” dont le nombre de pages est 
+	strictement inférieur à 21
+
+GET /recettes-test/_search
+{
+  "query": {
+    "bool": {
+      "must": [
+        { "match": { "author": "Zoé" } },
+        { "range": { "pages": { "lt": 21 } } }
+      ]
+    }
+  }
+}
+
+a) Combien de documents avez-vous obtenu ?
+Un document a été obtenu.
+
+
+EXERCICE 4
+Mettre à jour le mapping pour rajouter un champ “**theme**” à
+l’index “**recettes-test**”.
+
+Quel serait le type de champ approprié ?
+
+PUT /recettes-test/_mapping
+{
+  "properties": {
+    "theme": {
+      "type": "text"
+    }
+  }
+}
+
+Vu que le thème peut être considéré comme un mot clé alors à mon avis
+le type approprié est "keyword".
+
+
+EXERCICE 5
+
+requête de reindexation
+
+POST /_reindex
+{
+  "source": {
+    "index": "recettes-test"
+  },
+  "dest": {
+    "index": "recettes"
+  }
+}
+
+EXERCICE 6
+
+a ) Dénombrer le nombre de recettes par auteur, écrites avant 2023 
+
+POST /new_recettes-test/_search
+{
+  "size": 0,
+  "query": {
+    "range": {
+      "publication_date": {
+        "lt": "2023-01-01"
+      }
+    }
+  },
+  "aggs": {
+    "auteurs": {
+      "terms": {
+        "field": "author"
+      }
+    }
+  }
+}
+
+Résultats :
+
+{
+  "took": 204,
+  "timed_out": false,
+  "_shards": {
+    "total": 1,
+    "successful": 1,
+    "skipped": 0,
+    "failed": 0
+  },
+  "hits": {
+    "total": {
+      "value": 13,
+      "relation": "eq"
+    },
+    "max_score": null,
+    "hits": []
+  },
+  "aggregations": {
+    "auteurs": {
+      "doc_count_error_upper_bound": 0,
+      "sum_other_doc_count": 0,
+      "buckets": [
+        {
+          "key": "Alice",
+          "doc_count": 3
+        },
+        {
+          "key": "Bob",
+          "doc_count": 3
+        },
+        {
+          "key": "Camille",
+          "doc_count": 3
+        },
+        {
+          "key": "Dimitri",
+          "doc_count": 3
+        },
+        {
+          "key": "Zoé",
+          "doc_count": 1
+        }
+      ]
+    }
+  }
+}
+
+b ) Trouver les moyennes du nombre de pages des recettes par auteur :
+
+GET /new-recettes-test/_search
+{
+  "size": 0,
+  "aggs": {
+    "auteurs": {
+      "terms": {
+        "field": "author.keyword",
+        "size": 10
+      },
+      "aggs": {
+        "moyenne_pages": {
+          "avg": {
+            "field": "pages"
+          }
+        }
+      }
+    }
+  }
+}
+
+
+Résultats :
+
+{
+  "took": 136,
+  "timed_out": false,
+  "_shards": {
+    "total": 1,
+    "successful": 1,
+    "skipped": 0,
+    "failed": 0
+  },
+  "hits": {
+    "total": {
+      "value": 20,
+      "relation": "eq"
+    },
+    "max_score": null,
+    "hits": []
+  },
+  "aggregations": {
+    "auteurs": {
+      "doc_count_error_upper_bound": 0,
+      "sum_other_doc_count": 0,
+      "buckets": [
+        {
+          "key": "Dimitri",
+          "doc_count": 4,
+          "moyenne_pages": {
+            "value": 19
+          }
+        },
+        {
+          "key": "Zoé",
+          "doc_count": 4,
+          "moyenne_pages": {
+            "value": 21.5
+          }
+        },
+        {
+          "key": "Alex",
+          "doc_count": 3,
+          "moyenne_pages": {
+            "value": 25.666666666666668
+          }
+        },
+        {
+          "key": "Alice",
+          "doc_count": 3,
+          "moyenne_pages": {
+            "value": 22.333333333333332
+          }
+        },
+        {
+          "key": "Bob",
+          "doc_count": 3,
+          "moyenne_pages": {
+            "value": 16.666666666666668
+          }
+        },
+        {
+          "key": "Camille",
+          "doc_count": 3,
+          "moyenne_pages": {
+            "value": 26.666666666666668
+          }
+        }
+      ]
+    }
+  }
+}
+
+
+EXERCICE 7
+
+1) Réindexer les recettes dans un nouvel index “recettes-fr” avec le french 
+	analyzer en utilisant le mapping de la question 5.
+
+PUT /recettes-fr
+{
+  "settings": {
+    "analysis": {
+      "analyzer": {
+        "french_analyzer": {
+          "type": "standard",
+          "tokenizer": "standard",
+          "filter": [
+            "lowercase",
+            "french_stop",
+            "french_stemmer"
+          ]
+        }
+      },
+      "filter": {
+        "french_stop": {
+          "type": "stop",
+          "stopwords": "_french_"
+        },
+        "french_stemmer": {
+          "type": "stemmer",
+          "language": "light_french"
+        }
+      }
+    }
+  },
+  "mappings": {
+    "properties": {
+      "titre": {
+        "type": "text",
+        "analyzer": "french_analyzer"
+      },
+      "author": {
+        "type": "keyword"
+      },
+      "description": {
+        "type": "text",
+        "analyzer": "french_analyzer"
+      },
+      "publication_date": {
+        "type": "date"
+      },
+      "pages": {
+        "type": "integer"
+      }
+    }
+  }
+}
+
+POST _reindex
+{
+  "source": {
+    "index": "new-recettes-test"
+  },
+  "dest": {
+    "index": "recettes-fr"
+  }
+}
+
+
+
+EXERCICE 8
+
+1.Indexer un document dans l’index “recettes-fr” avec un nombre de pages négatif
+
+
+PUT recettes-fr/_doc/1
+{
+  "title": "Tarte aux pommes",
+  "author": "Alice",
+  "description": "Une tarte aux pommes croustillante et délicieuse",
+  "publication_date": "2022-05-01",
+  "pages": -7
+}
+Est-ce que le document a pu être indexé ?
+Oui, le document a pu être indexé.
+
+2.Rechercher les documents dans "recettes-fr” qui contiennent “pomme” dans leur description.
+Combien de documents sont renvoyés ?
+
+GET recettes-fr/_search
+{
+  "query": {
+    "match": {
+      "description": "pomme"
+    }
+  }
+}
+
+
+EXERCICE 9
+
+Quels sont les tokens générés par l’analyzer norvégien de la phrase suivante ?
+Jeg elsker klokka åtte-klasser
+
+GET _analyze
+{
+  "analyzer": "norwegian",
+  "text": "Jeg elsker klokka åtte-klasser"
+}
+
+Résultats
+
+{
+  "tokens": [
+    {
+      "token": "elsk",
+      "start_offset": 4,
+      "end_offset": 10,
+      "type": "<ALPHANUM>",
+      "position": 1
+    },
+    {
+      "token": "klokk",
+      "start_offset": 11,
+      "end_offset": 17,
+      "type": "<ALPHANUM>",
+      "position": 2
+    },
+    {
+      "token": "ått",
+      "start_offset": 18,
+      "end_offset": 22,
+      "type": "<ALPHANUM>",
+      "position": 3
+    },
+    {
+      "token": "klass",
+      "start_offset": 23,
+      "end_offset": 30,
+      "type": "<ALPHANUM>",
+      "position": 4
+    }
+  ]
+}
+
+EXERCICE 10
+
+
+1. Définir un index template qui appliquera :
+a )  L’alias “recettes” à tous les index avec le pattern de nommage “recettes-*”
+b ) Le mapping de la question 5
+c ) L’analyzer french par défaut
+
+PUT _index_template/recettes_template
+{
+  "index_patterns": ["recettes-*"],
+  "template": {
+    "settings": {
+      "number_of_shards": 1,
+      "analysis": {
+        "analyzer": {
+          "french_analyzer": {
+            "type": "custom",
+            "tokenizer": "standard",
+            "filter": ["lowercase", "french_stop", "french_stemmer"]
+          }
+        },
+        "filter": {
+          "french_stop": {
+            "type": "stop",
+            "stopwords": "_french_"
+          },
+          "french_stemmer": {
+            "type": "stemmer",
+            "language": "light_french"
+          }
+        }
+      }
+    },
+    "mappings": {
+      "properties": {
+        "title": {
+          "type": "text",
+          "analyzer": "french_analyzer"
+        },
+        "author": {
+          "type": "keyword"
+        },
+        "description": {
+          "type": "text",
+          "analyzer": "french_analyzer"
+        },
+        "publication_date": {
+          "type": "date"
+        },
+        "pages": {
+          "type": "integer"
+        }
+      }
+    },
+    "aliases": {
+      "recettes": {}
+    }
+  }
+}
+
+
+## La requête d’indexation
+
+POST recettes-es/_doc
+{
+"title": "Tarte aux pommes",
+  "author": "Alice",
+  "description": "Une tarte aux pommes croustillante et délicieuse",
+  "publication_date": "2022-05-01",
+  "pages": 7
+}
+
+
+
+3. Vérifier que l’index template a fonctionné.
+
+GET recettes-es/_mapping
+
+4. Compter le nombre de documents derrière l’alias “recettes”.
+
+GET recettes-es/_count
